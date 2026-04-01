@@ -23,10 +23,11 @@ export default function LoginPage() {
 
     try {
       const role = await login(email, password);
-      if (role === "admin") router.push("/admin/dashboard");
-      else if (role === "volunteer") router.push("/volunteer/dashboard");
-      else if (role === "participant") router.push("/participant/dashboard");
-      else router.push("/");
+      // Use full navigation (not client-side) so cookies from Set-Cookie are sent
+      if (role === "admin") window.location.href = "/admin/dashboard";
+      else if (role === "volunteer") window.location.href = "/volunteer/dashboard";
+      else if (role === "participant") window.location.href = "/participant/dashboard";
+      else window.location.href = "/";
     } catch (err: any) {
       if (err.message === "PENDING_APPROVAL") {
         router.push("/pending-approval");

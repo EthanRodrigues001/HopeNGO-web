@@ -20,7 +20,7 @@ export default function VolunteerDashboard() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        router.push("/login");
+        setLoading(false);
         return;
       }
 
@@ -35,7 +35,7 @@ export default function VolunteerDashboard() {
       }
     });
     return () => unsub();
-  }, [router]);
+  }, []);
 
   return (
     <div className="p-8 lg:p-16 text-foreground max-w-7xl">

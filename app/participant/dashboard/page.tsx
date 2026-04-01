@@ -21,7 +21,9 @@ export default function ParticipantDashboard() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        router.push("/login");
+        // Don't redirect — middleware handles auth gating.
+        // Firebase may still be initializing; just wait.
+        setLoading(false);
         return;
       }
 
@@ -37,7 +39,7 @@ export default function ParticipantDashboard() {
       }
     });
     return () => unsub();
-  }, [router]);
+  }, []);
 
   return (
     <div className="p-8 lg:p-16 text-foreground max-w-7xl">

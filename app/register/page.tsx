@@ -27,8 +27,8 @@ export default function RegisterPage() {
 
     try {
       const result = await registerUser({ ...formData, role });
-      if (!result.isApproved) router.push("/pending-approval");
-      else if (role === "participant") router.push("/participant/dashboard");
+      if (!result.isApproved) window.location.href = "/pending-approval";
+      else if (role === "participant") window.location.href = "/participant/dashboard";
     } catch (err: any) {
       setError(err.message || "Failed to register");
     } finally {
