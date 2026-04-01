@@ -12,11 +12,19 @@ export async function POST(req: Request) {
 
   const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
-  (await cookies()).set('session', sessionCookie, {
-    maxAge: expiresIn,
+  const cookieStore = await cookies();
+  cookieStore.set('session', sessionCookie, {
+    maxAge: expiresIn / 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
+    path: '/',
+  });
+  cookieStore.set('user-role', profile?.role || '', {
+    maxAge: expiresIn / 1000,
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     path: '/',
   });
 
@@ -24,6 +32,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-  (await cookies()).delete('session');
+  const cookieStore = await cookies();
+  cookieStore.delete('session');
+  cookieStore.delete('user-role');
   return Response.json({ status: 'ok' });
 }

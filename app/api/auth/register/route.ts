@@ -28,11 +28,19 @@ export async function POST(req: Request) {
     try {
       const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
       const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
-      (await cookies()).set('session', sessionCookie, {
-        maxAge: expiresIn,
+      const cookieStore = await cookies();
+      cookieStore.set('session', sessionCookie, {
+        maxAge: expiresIn / 1000,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
+        path: '/',
+      });
+      cookieStore.set('user-role', userData?.role || '', {
+        maxAge: expiresIn / 1000,
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
         path: '/',
       });
     } catch {

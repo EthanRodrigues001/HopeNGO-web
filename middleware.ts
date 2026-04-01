@@ -8,39 +8,27 @@ const ROLE_PATHS: Record<string, string> = {
 
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value;
+  const role = request.cookies.get('user-role')?.value;
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname === '/login' || pathname === '/register';
 
+  // No session cookie → public user
   if (!session) {
     if (isAuthRoute) return NextResponse.next();
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Verify session via lightweight API call
-  const verifyRes = await fetch(`${request.nextUrl.origin}/api/auth/verify`, {
-    headers: { Cookie: `session=${session}` },
-  });
-
-  if (!verifyRes.ok) {
-    // Session is invalid or expired
-    if (isAuthRoute) {
-      const resp = NextResponse.next();
-      resp.cookies.delete('session');
-      return resp;
-    }
+  // Session exists but role cookie is missing or empty → clear and redirect
+  if (!role || !ROLE_PATHS[role]) {
+    if (isAuthRoute) return NextResponse.next();
+    // Role cookie missing — could be corrupted state; let the user re-login
     const resp = NextResponse.redirect(new URL('/login', request.url));
     resp.cookies.delete('session');
+    resp.cookies.delete('user-role');
     return resp;
   }
 
-  const { role } = await verifyRes.json();
   const allowedPrefix = ROLE_PATHS[role];
-
-  // If role is missing or invalid
-  if (!allowedPrefix) {
-    if (isAuthRoute) return NextResponse.next();
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
 
   // If logged in user tries to visit login/register, push them to dashboard
   if (isAuthRoute) {
