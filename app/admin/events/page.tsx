@@ -7,16 +7,29 @@ import { PlusCircle, Calendar as CalendarIcon, MapPin, Users, Ticket, ArrowRight
 
 export const dynamic = "force-dynamic";
 
+function formatFirestoreDate(dateVal: any): string | null {
+  if (!dateVal) return null;
+  if (dateVal._seconds) return new Date(dateVal._seconds * 1000).toISOString();
+  if (dateVal.seconds) return new Date(dateVal.seconds * 1000).toISOString();
+  if (dateVal.toDate) return dateVal.toDate().toISOString();
+  if (typeof dateVal === 'string') return dateVal;
+  return null;
+}
+
 export default async function AdminEventsPage() {
   const eventsSnap = await adminDb
     .collection("events")
     .orderBy("createdAt", "desc")
     .get();
 
-  const events = eventsSnap.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as any[];
+  const events = eventsSnap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      eventDate: formatFirestoreDate(data.eventDate),
+    };
+  }) as any[];
 
   return (
     <div className="p-8 lg:p-16 text-foreground max-w-7xl">

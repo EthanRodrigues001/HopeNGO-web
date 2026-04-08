@@ -234,11 +234,9 @@ export default function DonationsClient({ initialLinks, initialDonations }: Prop
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <CardTitle className="text-2xl font-serif text-foreground">Generated Links</CardTitle>
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogTrigger asChild>
-                <Button className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground px-6 font-semibold uppercase tracking-[0.12em] text-xs flex gap-2 shadow-none rounded-[8px] transition-all">
-                  <PlusCircle size={16} />
-                  New Donation Link
-                </Button>
+              <DialogTrigger className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground px-6 font-semibold uppercase tracking-[0.12em] text-xs flex items-center justify-center gap-2 shadow-none rounded-[8px] transition-all">
+                <PlusCircle size={16} />
+                New Donation Link
               </DialogTrigger>
               <DialogContent className="bg-card border-foreground/10 rounded-[20px] max-w-lg p-0 overflow-hidden">
                 <DialogHeader className="p-8 pb-4 border-b border-foreground/[0.05]">

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
-import { ParticipantRegisterButton, VolunteerApplyButton } from "@/components/events/RegisterButtons";
+import { VolunteerApplyButton } from "@/components/events/RegisterButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +13,20 @@ export default async function EventsPage() {
     .orderBy("createdAt", "desc")
     .get();
 
-  const events = eventsSnap.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  const events = eventsSnap.docs.map((doc) => {
+    const data = doc.data();
+    const rawDate = data.eventDate;
+    const eventDate = rawDate?.toDate?.() 
+      ? rawDate.toDate().toISOString() 
+      : rawDate?._seconds 
+        ? new Date(rawDate._seconds * 1000).toISOString()
+        : typeof rawDate === 'string' ? rawDate : null;
+    return {
+      id: doc.id,
+      ...data,
+      eventDate,
+    };
+  });
 
   let role = null;
   let registeredSet = new Set<string>();
@@ -28,10 +38,7 @@ export default async function EventsPage() {
       const userSnap = await adminDb.doc(`users/${decoded.uid}`).get();
       role = userSnap.data()?.role;
       
-      if (role === 'participant') {
-         const snaps = await adminDb.collection("participantRegistrations").where("participantId", "==", decoded.uid).get();
-         snaps.docs.forEach(doc => registeredSet.add(doc.data().eventId));
-      } else if (role === 'volunteer') {
+   if (role === 'volunteer') {
          const snaps = await adminDb.collection("volunteerApplications").where("volunteerId", "==", decoded.uid).get();
          snaps.docs.forEach(doc => registeredSet.add(doc.data().eventId));
       }
@@ -71,7 +78,7 @@ export default async function EventsPage() {
                   <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary bg-primary/10 px-3 py-1.5 rounded-full">
                     {event.eventType || "Event"}
                   </span>
-                  <span className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">{new Date(event.eventDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</span>
+                  <span className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">{event.eventDate ? new Date(event.eventDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) : 'TBD'}</span>
                 </div>
                 <CardTitle className="text-2xl font-serif font-medium tracking-tight text-foreground leading-[1.2] mb-1 line-clamp-2">{event.title}</CardTitle>
                 <div className="text-sm font-light text-foreground/60">
@@ -93,15 +100,13 @@ export default async function EventsPage() {
               </CardContent>
               <CardFooter className="p-8 pt-0 mt-4">
                 {!role ? (
-                  <Link href="/login" className="w-full">
-                    <Button variant="outline" className="w-full h-12 text-sm uppercase tracking-widest font-semibold text-foreground border-foreground/10 hover:bg-foreground/5 shadow-none rounded-[8px]">Sign in to Register</Button>
+                  <Link href={`/events/${event.id}`} className="w-full">
+                    <Button variant="outline" className="w-full h-12 text-sm uppercase tracking-widest font-semibold text-foreground border-foreground/10 hover:bg-foreground/5 shadow-none rounded-[8px]">View Details</Button>
                   </Link>
-                ) : role === 'participant' ? (
-                  <ParticipantRegisterButton eventId={event.id} disabled={!event.participantRegistrationOpen} isRegistered={registeredSet.has(event.id)} />
                 ) : role === 'volunteer' ? (
                   <VolunteerApplyButton eventId={event.id} disabled={!event.volunteerRegistrationOpen} isRegistered={registeredSet.has(event.id)} />
                 ) : (
-                  <Link href="/admin/dashboard" className="w-full">
+                  <Link href={`/admin/events/${event.id}`} className="w-full">
                     <Button variant="secondary" className="w-full h-12 text-sm uppercase tracking-widest font-semibold bg-muted hover:bg-muted/80 text-foreground shadow-none rounded-[8px]">Manage Event</Button>
                   </Link>
                 )}

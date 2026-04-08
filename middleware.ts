@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ROLE_PATHS: Record<string, string> = {
   admin: '/admin',
+  event_coordinator: '/coordinator',
   volunteer: '/volunteer',
-  participant: '/participant',
 };
 
 export async function middleware(request: NextRequest) {
@@ -44,5 +44,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/volunteer/:path*', '/participant/:path*', '/login', '/register'],
+  matcher: ['/admin/:path*', '/coordinator/:path*', '/volunteer/:path*', '/login', '/register'],
 };

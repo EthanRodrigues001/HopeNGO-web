@@ -19,9 +19,9 @@ export async function login(email: string, password: string) {
 
   if (!profile) throw new Error('No user profile found');
   if (!profile.isActive) throw new Error('Account is deactivated');
-  if (profile.role === 'volunteer' && !profile.isApproved) {
+  if ((profile.role === 'volunteer' || profile.role === 'event_coordinator') && !profile.isApproved) {
     throw new Error('PENDING_APPROVAL');
   }
 
-  return profile.role; // "admin" | "volunteer" | "participant"
+  return profile.role; // "admin" | "volunteer" | "event_coordinator"
 }

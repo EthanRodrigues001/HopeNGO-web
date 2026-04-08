@@ -19,7 +19,7 @@ export async function registerUser({
 
   await updateProfile(user, { displayName: fullName });
 
-  const isApproved = role === "participant"; // volunteers need admin approval
+  const isApproved = role === "admin"; // Both volunteers and coordinators need admin approval
 
   const userData = {
     email,

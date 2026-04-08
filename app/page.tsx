@@ -34,8 +34,8 @@ export default function Home() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/events" className="group flex items-center gap-2 text-foreground font-medium underline underline-offset-[6px] decoration-primary/40 hover:decoration-primary decoration-2 transition-all">
-                Read our methodology
+              <Link href="/donate" className="group flex items-center gap-2 text-foreground font-medium underline underline-offset-[6px] decoration-primary/40 hover:decoration-primary decoration-2 transition-all">
+                Make a Donation
                 <ArrowUpRight className="h-4 w-4 text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>

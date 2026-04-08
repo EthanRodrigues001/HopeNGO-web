@@ -26,7 +26,7 @@ export default function LoginPage() {
       // Use full navigation (not client-side) so cookies from Set-Cookie are sent
       if (role === "admin") window.location.href = "/admin/dashboard";
       else if (role === "volunteer") window.location.href = "/volunteer/dashboard";
-      else if (role === "participant") window.location.href = "/participant/dashboard";
+      else if (role === "event_coordinator") window.location.href = "/coordinator/dashboard";
       else window.location.href = "/";
     } catch (err: any) {
       if (err.message === "PENDING_APPROVAL") {

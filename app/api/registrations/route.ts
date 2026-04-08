@@ -4,27 +4,17 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(req: Request) {
   try {
-    const session = (await cookies()).get('session')?.value;
-    if (!session) return new Response('Unauthorized', { status: 401 });
-    
-    const decoded = await adminAuth.verifySessionCookie(session, true);
-    const participantId = decoded.uid;
-    
-    const userDoc = await adminDb.doc(`users/${participantId}`).get();
-    const userData = userDoc.data();
-    if (!userData || userData.role !== 'participant') {
-      return new Response('Forbidden: Only participants can register', { status: 403 });
+    const { eventId, fullName, email, phone } = await req.json();
+
+    if (!eventId || !fullName || !email) {
+      return Response.json({ error: 'Missing required participant details' }, { status: 400 });
     }
-    
-    const participantName = userData.fullName || "Unknown";
-    const participantEmail = userData.email || "";
 
-    const { eventId } = await req.json();
-
+    // Since participants are public now, we use their email to track uniqueness
     // Check duplicate outside transaction to avoid Firestore sdk errors
     const existingQuery = await adminDb.collection('participantRegistrations')
       .where('eventId', '==', eventId)
-      .where('participantId', '==', participantId)
+      .where('participantEmail', '==', email)
       .where('status', '!=', 'cancelled')
       .limit(1)
       .get();
@@ -44,9 +34,10 @@ export async function POST(req: Request) {
       const regRef = adminDb.collection('participantRegistrations').doc();
       tx.set(regRef, {
         eventId,
-        participantId,
-        participantName,
-        participantEmail,
+        participantId: null, // Public user, no auth UID
+        participantName: fullName,
+        participantEmail: email,
+        participantPhone: phone || "",
         registrationDate: FieldValue.serverTimestamp(),
         status: 'registered',
         attendanceMarkedAt: null,

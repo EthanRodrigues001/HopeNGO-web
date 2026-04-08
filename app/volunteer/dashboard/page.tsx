@@ -15,6 +15,7 @@ export default function VolunteerDashboard() {
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState<any[]>([]);
   const [availableEvents, setAvailableEvents] = useState<any[]>([]);
+  const [certificates, setCertificates] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function VolunteerDashboard() {
         const data = await getVolunteerDashboardData();
         setApplications(data.applications);
         setAvailableEvents(data.availableEvents);
+        setCertificates(data.certificates || []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -130,6 +132,35 @@ export default function VolunteerDashboard() {
               </div>
             )}
           </section>
+
+          {/* Certificates Section */}
+          {certificates.length > 0 && (
+            <section>
+              <div className="mb-8 flex items-center justify-between">
+                <h2 className="text-2xl font-serif text-foreground flex items-center gap-3">
+                  <Flag className="text-primary/70" size={20} strokeWidth={1.5} />
+                  Service Honors
+                </h2>
+                <Badge variant="secondary" className="shadow-none">
+                  {certificates.length}
+                </Badge>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {certificates.map((cert: any) => (
+                  <Card key={cert.id} className="bg-card shadow-[0_32px_64px_-12px_rgba(25,28,26,0.03)] border-0 ring-1 ring-primary/20 rounded-[20px] bg-gradient-to-br from-card to-primary/5 flex flex-col items-center justify-center p-8 text-center text-foreground">
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-primary mb-2">Certificate of Service</p>
+                    <h3 className="text-xl font-serif leading-[1.3] mb-4">{cert.eventTitle}</h3>
+                    <p className="text-sm font-light text-foreground/60 mb-6 font-mono">{cert.certificateNumber}</p>
+                    <a href={cert.qrVerifyUrl} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" className="text-xs uppercase tracking-widest font-bold shadow-none rounded-[8px] border-primary/20 hover:bg-primary hover:text-primary-foreground transition-colors">
+                        Verify Authenticity
+                      </Button>
+                    </a>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Available Operations Section */}
           <section>

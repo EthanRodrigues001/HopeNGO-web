@@ -18,22 +18,25 @@ export async function GET() {
       return NextResponse.json({ events: 0, upcoming: 0, volunteers: 0, participants: 0 });
     }
 
-    const [eventsSnap, volunteersSnap, participantsSnap] = await Promise.all([
+    const [eventsSnap, volunteersSnap, coordsSnap, donationsSnap] = await Promise.all([
       adminDb.collection("events").get(),
       adminDb.collection("users").where("role", "==", "volunteer").get(),
-      adminDb.collection("users").where("role", "==", "participant").get(),
+      adminDb.collection("users").where("role", "==", "event_coordinator").get(),
+      adminDb.collection("donations").get(),
     ]);
 
     const events = eventsSnap.docs.map(d => d.data());
     const upcoming = events.filter(e => e.status === "upcoming").length;
+    const totalDonations = donationsSnap.docs.reduce((acc, doc) => acc + (doc.data().amount || 0), 0);
 
     return NextResponse.json({
       events: events.length,
       upcoming,
       volunteers: volunteersSnap.size,
-      participants: participantsSnap.size,
+      coordinators: coordsSnap.size,
+      totalDonations,
     });
   } catch {
-    return NextResponse.json({ events: 0, upcoming: 0, volunteers: 0, participants: 0 });
+    return NextResponse.json({ events: 0, upcoming: 0, volunteers: 0, coordinators: 0, totalDonations: 0 });
   }
 }

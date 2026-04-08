@@ -12,7 +12,7 @@ import { ArrowRight } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [role, setRole] = useState("participant");
+  const [role, setRole] = useState("event_coordinator");
   const [formData, setFormData] = useState({
     email: "", password: "", fullName: "", phone: "",
     city: "", state: "", occupation: "", emergencyContact: "",
@@ -28,7 +28,7 @@ export default function RegisterPage() {
     try {
       const result = await registerUser({ ...formData, role });
       if (!result.isApproved) window.location.href = "/pending-approval";
-      else if (role === "participant") window.location.href = "/participant/dashboard";
+      else if (role === "event_coordinator") window.location.href = "/coordinator/dashboard";
     } catch (err: any) {
       setError(err.message || "Failed to register");
     } finally {
@@ -61,13 +61,13 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                <Tabs defaultValue="participant" onValueChange={setRole} className="w-full mb-2">
+                <Tabs defaultValue="event_coordinator" onValueChange={setRole} className="w-full mb-2">
                   <TabsList className="grid w-full grid-cols-2 bg-muted/40 border-foreground/[0.05] border rounded-[12px] h-12 p-1">
                     <TabsTrigger
-                      value="participant"
+                      value="event_coordinator"
                       className="data-[state=active]:bg-background data-[state=active]:text-foreground text-foreground/50 rounded-[8px] shadow-none uppercase tracking-[0.12em] text-xs font-bold transition-all"
                     >
-                      Participant
+                      Coordinator
                     </TabsTrigger>
                     <TabsTrigger
                       value="volunteer"
@@ -77,7 +77,7 @@ export default function RegisterPage() {
                     </TabsTrigger>
                   </TabsList>
                   <div className="pt-4">
-                    <TabsContent value="participant" className="m-0 border-none outline-none data-[state=inactive]:hidden" />
+                    <TabsContent value="event_coordinator" className="m-0 border-none outline-none data-[state=inactive]:hidden" />
                     <TabsContent value="volunteer" className="m-0 border-none outline-none data-[state=inactive]:hidden" />
                   </div>
                 </Tabs>

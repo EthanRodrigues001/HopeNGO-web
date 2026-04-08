@@ -16,14 +16,39 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    // Convert eventDate to a proper Date for Firestore Timestamp storage
+    if (body.eventDate) {
+      body.eventDate = new Date(body.eventDate);
+    }
+
     const ref = await adminDb.collection('events').add({
       ...body,
       participantCount: 0,
       volunteerCount: 0,
+      coordinatorId: null,
+      coordinatorName: null,
       createdBy: decoded.uid,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+
+    if (body.isRecurring && body.sessionDates && body.sessionDates.length > 0) {
+      const batch = adminDb.batch();
+      
+      body.sessionDates.forEach((dateString: string, index: number) => {
+        const sessionRef = adminDb.collection('eventSessions').doc();
+        batch.set(sessionRef, {
+          eventId: ref.id,
+          sessionNumber: index + 1,
+          sessionDate: new Date(dateString),
+          attendanceOpen: false,
+          attendanceClosed: false,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      });
+      
+      await batch.commit();
+    }
 
     return Response.json({ id: ref.id });
   } catch (error) {

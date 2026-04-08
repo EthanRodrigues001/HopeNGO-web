@@ -15,18 +15,22 @@ export async function PATCH(req: Request, context: any) {
     }
 
     const { id } = await context.params;
-    const { status, adminNotes = '' } = await req.json();
+    const { status, adminNotes, attendance } = await req.json();
 
-    if (!['approved', 'rejected'].includes(status)) {
+    if (status && !['approved', 'rejected', 'pending'].includes(status)) {
       return new Response('Invalid status', { status: 400 });
     }
 
-    await adminDb.doc(`volunteerApplications/${id}`).update({
-      status,
-      adminNotes,
+    const payload: any = {
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: decoded.uid,
-    });
+    };
+    
+    if (status !== undefined) payload.status = status;
+    if (adminNotes !== undefined) payload.adminNotes = adminNotes;
+    if (attendance !== undefined) payload.attendance = attendance;
+
+    await adminDb.doc(`volunteerApplications/${id}`).update(payload);
 
     return Response.json({ success: true, status });
   } catch (err: any) {

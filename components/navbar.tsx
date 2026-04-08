@@ -8,7 +8,7 @@ import { auth, db } from "@/lib/firebase/client";
 import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 
-const DASHBOARD_PREFIXES = ["/admin", "/participant", "/volunteer"];
+const DASHBOARD_PREFIXES = ["/admin", "/participant", "/volunteer", "/coordinator"];
 
 export function Navbar() {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -34,10 +34,10 @@ export function Navbar() {
           if (userDoc.exists()) {
             setUserRole(userDoc.data().role);
           } else {
-            setUserRole("participant");
+            setUserRole(null);
           }
         } catch (e) {
-          setUserRole("participant");
+          setUserRole(null);
         }
       } else {
         setIsAuth(false);
@@ -81,15 +81,27 @@ export function Navbar() {
           >
             Field Operations
           </Link>
+          <Link
+            href="/donate"
+            className={`text-[11px] uppercase tracking-[0.12em] font-bold transition-colors hidden md:block ${
+              pathname === "/donate"
+                ? "text-primary"
+                : "text-foreground/50 hover:text-primary"
+            }`}
+          >
+            Donations
+          </Link>
 
           {loading ? null : isAuth ? (
             <div className="flex items-center gap-4">
-              <Link
-                href={`/${userRole || "participant"}/dashboard`}
-                className="text-[11px] uppercase tracking-[0.12em] font-bold text-primary hover:text-primary/70 transition-colors hidden sm:block"
-              >
-                Dashboard
-              </Link>
+              {userRole && (
+                <Link
+                  href={userRole === 'event_coordinator' ? '/coordinator/dashboard' : `/${userRole}/dashboard`}
+                  className="text-[11px] uppercase tracking-[0.12em] font-bold text-primary hover:text-primary/70 transition-colors hidden sm:block"
+                >
+                  Dashboard
+                </Link>
+              )}
               <Button
                 variant="outline"
                 size="sm"

@@ -16,19 +16,22 @@ const schema = z.object({
   title: z.string().min(3),
   description: z.string().min(10),
   eventType: z.string(),
-  eventDate: z.string(),
+  eventDate: z.string(), // acts as primary/start date normally
   startTime: z.string(),
   endTime: z.string(),
   venue: z.string(),
   city: z.string(),
   state: z.string(),
   bannerImageUrl: z.string().url(),
-  maxParticipants: z.coerce.number().optional().nullable(),
-  participantRegistrationOpen: z.boolean(),
   maxVolunteers: z.coerce.number().optional().nullable(),
   volunteerRegistrationOpen: z.boolean(),
   volunteerInstructions: z.string().optional(),
   status: z.string(),
+  isRecurring: z.boolean().default(false),
+  recurringDays: z.array(z.number()).optional(),
+  recurringStartDate: z.string().optional(),
+  recurringEndDate: z.string().optional(),
+  sessionDatesString: z.string().optional(),
 });
 
 type EventForm = z.infer<typeof schema>;
@@ -43,10 +46,13 @@ export default function NewEventPage() {
     defaultValues: {
       eventType: "Workshop",
       status: "upcoming",
-      participantRegistrationOpen: true,
       volunteerRegistrationOpen: true,
-      maxParticipants: null,
       maxVolunteers: null,
+      isRecurring: false,
+      recurringDays: [],
+      recurringStartDate: "",
+      recurringEndDate: "",
+      sessionDatesString: "",
     }
   });
 
@@ -55,12 +61,50 @@ export default function NewEventPage() {
     setError("");
 
     try {
+      let finalSessionDates: string[] = [];
+
+      if (data.isRecurring) {
+        if (data.recurringDays && data.recurringStartDate && data.recurringEndDate) {
+          const start = new Date(data.recurringStartDate);
+          const end = new Date(data.recurringEndDate);
+          if (end < start) throw new Error("End date cannot be before start date.");
+
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            if (data.recurringDays.includes(d.getDay())) {
+              finalSessionDates.push(d.toISOString().split('T')[0]);
+            }
+          }
+        }
+        
+        // Also combine with any manually injected individual dates if they used it
+        if (data.sessionDatesString) {
+          const manual = data.sessionDatesString.split(',').map(s => s.trim()).filter(Boolean);
+          finalSessionDates = Array.from(new Set([...finalSessionDates, ...manual]));
+        }
+        
+        finalSessionDates.sort(); // chronologically order dates
+      }
+
+      if (data.isRecurring && finalSessionDates.length === 0) {
+        throw new Error("Recurring operation requires at least one computed session date.");
+      }
+
+      let masterEventDate = data.eventDate;
+      if (data.isRecurring && finalSessionDates.length > 0) {
+        masterEventDate = finalSessionDates[0]; // Derive primary date from earliest session
+      }
+
+      if (!masterEventDate || masterEventDate.trim() === "") {
+        throw new Error("Primary Date is strictly required.");
+      }
+
       const res = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          eventDate: new Date(data.eventDate).toISOString(),
+          sessionDates: finalSessionDates,
+          eventDate: new Date(masterEventDate).toISOString(),
         }),
       });
 
@@ -121,10 +165,115 @@ export default function NewEventPage() {
                   <h3 className="font-serif text-2xl text-foreground">Schedule & Geography</h3>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  <label className="text-xs uppercase tracking-widest font-bold text-foreground/50">Date</label>
-                  <Input type="date" {...register("eventDate")} className="bg-transparent border-foreground/10 focus-visible:ring-primary h-12 rounded-[8px]" />
+                <div className="flex items-center gap-1 col-span-2 bg-foreground/[0.03] p-1 rounded-[10px] w-full max-w-sm mb-2">
+                  <div 
+                    onClick={() => setValue("isRecurring", false)} 
+                    className={`flex-1 text-center py-2 text-xs uppercase tracking-widest font-bold rounded-[8px] cursor-pointer transition-all ${!watch("isRecurring") ? "bg-card shadow-sm text-foreground" : "text-foreground/40 hover:text-foreground/70"}`}
+                  >
+                    Single Operation
+                  </div>
+                  <div 
+                    onClick={() => setValue("isRecurring", true)} 
+                    className={`flex-1 text-center py-2 text-xs uppercase tracking-widest font-bold rounded-[8px] cursor-pointer transition-all ${watch("isRecurring") ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground/40 hover:text-foreground/70"}`}
+                  >
+                    Recurring Campaign
+                  </div>
                 </div>
+
+                {!watch("isRecurring") ? (
+                  <div className="flex flex-col gap-3 col-span-2 md:col-span-1">
+                    <label className="text-xs uppercase tracking-widest font-bold text-foreground/50">Primary Event Date</label>
+                    <Input type="date" {...register("eventDate")} className="bg-transparent border-foreground/10 focus-visible:ring-primary h-12 rounded-[8px]" />
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4 col-span-2 p-6 bg-primary/[0.02] border border-primary/10 rounded-[12px]">
+                    <div>
+                      <label className="text-xs uppercase tracking-widest font-bold text-primary/70">Session Roster Generator</label>
+                      <p className="text-[10px] text-foreground/50 mt-1">Configuring a recurring campaign requires mapping multiple operation dates.</p>
+                    </div>
+
+                    <div className="pt-2 flex flex-col gap-4">
+                      <label className="text-[11px] font-bold text-foreground/60">1. Auto-Generate by Days of Week</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[{ id: 1, label: "Mon" }, { id: 2, label: "Tue" }, { id: 3, label: "Wed" }, { id: 4, label: "Thu" }, { id: 5, label: "Fri" }, { id: 6, label: "Sat" }, { id: 0, label: "Sun" }].map(d => {
+                          const currentDays = watch("recurringDays") || [];
+                          const isSelected = currentDays.includes(d.id);
+                          return (
+                            <button
+                              key={d.id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setValue("recurringDays", currentDays.filter((x: number) => x !== d.id), { shouldValidate: true });
+                                } else {
+                                  setValue("recurringDays", [...currentDays, d.id], { shouldValidate: true });
+                                }
+                              }}
+                              className={`px-4 py-2 border rounded-full text-xs font-bold transition-colors ${isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-foreground/10 text-foreground/70 hover:bg-muted'}`}
+                            >
+                              {d.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="flex flex-col gap-2">
+                           <label className="text-[10px] uppercase font-bold text-foreground/40">From Date</label>
+                           <Input type="date" {...register("recurringStartDate")} className="bg-background border-foreground/10 rounded-[8px]" />
+                         </div>
+                         <div className="flex flex-col gap-2">
+                           <label className="text-[10px] uppercase font-bold text-foreground/40">Until Date</label>
+                           <Input type="date" {...register("recurringEndDate")} className="bg-background border-foreground/10 rounded-[8px]" />
+                         </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-2 border-t border-primary/10">
+                      <label className="text-[11px] font-bold text-foreground/60">2. Include Manual Date Injections (Optional)</label>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Input type="date" id="newSessionDate" className="bg-background border-foreground/10 focus-visible:ring-primary h-12 rounded-[8px] w-48" />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="h-12 border-primary/20 hover:bg-primary/[0.05] text-primary shadow-none uppercase text-[10px] font-bold tracking-widest"
+                        onClick={() => {
+                          const val = (document.getElementById('newSessionDate') as HTMLInputElement).value;
+                          if (!val) return;
+                          const currentStr = watch("sessionDatesString") || "";
+                          const current = currentStr.split(',').map((s: string) => s.trim()).filter(Boolean);
+                          if (!current.includes(val)) {
+                            setValue("sessionDatesString", [...current, val].join(', '), { shouldValidate: true });
+                          }
+                          (document.getElementById('newSessionDate') as HTMLInputElement).value = "";
+                        }}
+                      >
+                        + Accumulate Session
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mt-2">
+                       {watch("sessionDatesString")?.split(',').map((d: string) => d.trim()).filter(Boolean).map((dateStr, idx) => (
+                         <div key={idx} className="flex items-center gap-2 bg-background border border-foreground/10 px-3 py-1.5 rounded-full text-xs font-mono">
+                           {dateStr}
+                           <button 
+                             type="button" 
+                             className="text-foreground/40 hover:text-red-500 transition-colors cursor-pointer ml-1"
+                             onClick={() => {
+                               const currentStr = watch("sessionDatesString") || "";
+                               const arr = currentStr.split(',').map((s: string) => s.trim()).filter(Boolean);
+                               arr.splice(idx, 1);
+                               setValue("sessionDatesString", arr.join(', '), { shouldValidate: true });
+                             }}
+                           >
+                             ×
+                           </button>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-col gap-3">
                   <label className="text-xs uppercase tracking-widest font-bold text-foreground/50">Start Time</label>
                   <Input type="time" {...register("startTime")} className="bg-transparent border-foreground/10 focus-visible:ring-primary h-12 rounded-[8px]" />
@@ -158,10 +307,7 @@ export default function NewEventPage() {
                   <h3 className="font-serif text-2xl text-foreground">Personnel Cap</h3>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  <label className="text-xs uppercase tracking-widest font-bold text-foreground/50">Max Participants Limit</label>
-                  <Input type="number" {...register("maxParticipants")} className="bg-transparent border-foreground/10 focus-visible:ring-primary h-12 rounded-[8px]" placeholder="Leave blank for infinite" />
-                </div>
+
                 <div className="flex flex-col gap-3">
                   <label className="text-xs uppercase tracking-widest font-bold text-foreground/50">Max Volunteers Limit</label>
                   <Input type="number" {...register("maxVolunteers")} className="bg-transparent border-foreground/10 focus-visible:ring-primary h-12 rounded-[8px]" placeholder="Leave blank for infinite" />

@@ -21,12 +21,27 @@ export async function getVolunteerDashboardData() {
       .where("volunteerRegistrationOpen", "==", true).get();
     
     const availableEvents = eventsSnap.docs
-      .map(d => ({id: d.id, ...d.data()}))
+      .map(d => {
+        const data = d.data();
+        const rawDate = data.eventDate;
+        return {
+          id: d.id,
+          ...data,
+          eventDate: rawDate?.toDate?.() ? rawDate.toDate().toISOString()
+            : rawDate?._seconds ? new Date(rawDate._seconds * 1000).toISOString()
+            : typeof rawDate === 'string' ? rawDate : null,
+        };
+      })
       .filter((e:any) => !appliedEventIds.includes(e.id));
 
+    const certsSnap = await adminDb.collection("certificates")
+      .where("recipientId", "==", uid).get();
+      
+    const certificates = certsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
     // parse JSON to destroy server Timestamp object references
-    return JSON.parse(JSON.stringify({ applications: userApps, availableEvents }));
+    return JSON.parse(JSON.stringify({ applications: userApps, availableEvents, certificates }));
   } catch(e) {
-    return JSON.parse(JSON.stringify({ applications: [], availableEvents: [] }));
+    return JSON.parse(JSON.stringify({ applications: [], availableEvents: [], certificates: [] }));
   }
 }

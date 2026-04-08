@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/events", label: "Events Vault", icon: Calendar },
   { href: "/admin/volunteers", label: "Operatives", icon: Users },
+  { href: "/admin/coordinators", label: "Coordinators", icon: Users },
   { href: "/admin/donations", label: "Donations", icon: Heart },
   { href: "/admin/reports", label: "Reports & Ledgers", icon: FileText },
 ];

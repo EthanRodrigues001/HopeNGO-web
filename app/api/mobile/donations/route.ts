@@ -1,5 +1,6 @@
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getBaseUrl } from '@/lib/utils/base-url';
 
 const corsHeaders = {
   'Content-Type': 'application/json',
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Min and max amounts required for recurring' }), { status: 400, headers: corsHeaders });
     }
 
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const APP_URL = getBaseUrl();
     const linkId = adminDb.collection('donationLinks').doc().id;
 
     const donationLink = {

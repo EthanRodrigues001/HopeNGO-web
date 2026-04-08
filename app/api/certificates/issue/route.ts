@@ -27,12 +27,10 @@ export async function POST(req: Request) {
 
     // Process certificates
     const batch = adminDb.batch();
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const { getBaseUrl } = require('@/lib/utils/base-url');
+    const { generateCertNumber } = require('@/lib/utils/cert-number');
+    const APP_URL = getBaseUrl();
     
-    // We get current year
-    const year = new Date().getFullYear();
-    const shortEventId = eventId.slice(0, 6).toUpperCase();
-
     // To get sequence safely without runTransaction on each, we can query the max existing,
     // though in a heavy concurrent environment it's better to use transactions.
     const certsQuery = await adminDb.collection('certificates')
@@ -41,14 +39,28 @@ export async function POST(req: Request) {
     
     let currentSeq = certsQuery.size;
 
-    for (const uid of recipientIds) {
-      const uSnap = await adminDb.doc(`users/${uid}`).get();
-      const uData = uSnap.data();
-      if (!uData) continue;
+    for (let uOpt of recipientIds) {
+      let recipientId = null;
+      let recipientName = "Participant";
+      let recipientEmail = "";
+      
+      // If the item is just a string UID (volunteer/admin)
+      if (typeof uOpt === "string") {
+        recipientId = uOpt;
+        const uSnap = await adminDb.doc(`users/${recipientId}`).get();
+        const uData = uSnap.data();
+        if (uData) {
+          recipientName = uData.fullName || "Participant";
+          recipientEmail = uData.email || "";
+        }
+      } else if (typeof uOpt === "object" && uOpt !== null) {
+        // For public participants passed as objects: { name, email }
+        recipientName = uOpt.name || "Participant";
+        recipientEmail = uOpt.email || "";
+      }
 
       currentSeq++;
-      const seqStr = String(currentSeq).padStart(4, '0');
-      const certificateNumber = `ANTI-${year}-${shortEventId}-${seqStr}`;
+      const certificateNumber = generateCertNumber(eventId, currentSeq);
       
       const certRef = adminDb.collection('certificates').doc();
       batch.set(certRef, {
@@ -56,11 +68,13 @@ export async function POST(req: Request) {
         eventId,
         eventTitle: event.title,
         eventDate: event.eventDate,
-        recipientId: uid,
-        recipientName: uData.fullName || "Participant",
+        recipientId, // will be null for public participants
+        recipientName,
+        recipientEmail,
         recipientRole,
         issuedDate: FieldValue.serverTimestamp(),
         issuedBy: decoded.uid,
+        isAutoIssued: false,
         isVisible: true,
         qrVerifyUrl: `${APP_URL}/verify/${certificateNumber}`
       });

@@ -1,5 +1,6 @@
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getBaseUrl } from '@/lib/utils/base-url';
 
 const corsHeaders = {
   'Content-Type': 'application/json',
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     const event = eventSnap.data()!;
 
     const batch = adminDb.batch();
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const APP_URL = getBaseUrl();
     const year = new Date().getFullYear();
     const shortEventId = eventId.slice(0, 6).toUpperCase();
 
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
 
       currentSeq++;
       const seqStr = String(currentSeq).padStart(4, '0');
-      const certificateNumber = `ANTI-${year}-${shortEventId}-${seqStr}`;
+      const certificateNumber = `HOPE-${year}-${shortEventId}-${seqStr}`;
       
       const certRef = adminDb.collection('certificates').doc();
       batch.set(certRef, {

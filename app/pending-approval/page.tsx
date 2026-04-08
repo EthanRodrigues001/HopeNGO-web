@@ -14,7 +14,7 @@ export default function PendingApproval() {
         </div>
         <h1 className="text-4xl font-serif font-medium text-foreground tracking-tight leading-tight">Application<br />Received</h1>
         <p className="text-foreground/70 font-light leading-relaxed">
-          Your account is currently under review by the NGO's administration. You will be notified once your volunteer access is approved.
+          Your account is currently under review by the NGO's administration. You will be notified once your account access is approved.
         </p>
         <Button onClick={() => router.push("/")} className="mt-8 w-full h-14 bg-muted text-foreground hover:bg-muted/80 shadow-none hover:shadow-none text-sm uppercase tracking-widest font-semibold transition-all">
           Return to Archive

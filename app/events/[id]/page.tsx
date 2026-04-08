@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Clock, CalendarIcon } from "lucide-react";
 import { cookies } from "next/headers";
-import { ParticipantRegisterButton, VolunteerApplyButton } from "@/components/events/RegisterButtons";
+import { VolunteerApplyButton } from "@/components/events/RegisterButtons";
+import { PublicRegistrationForm } from "./registration-form";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,14 @@ export default async function EventPublicPage({ params }: { params: Promise<{ id
 
   const eventData = eventSnap.data()!;
   
+  // Safely convert Firestore Timestamp to ISO string
+  const rawDate = eventData.eventDate;
+  const eventDateStr = rawDate?.toDate?.() 
+    ? rawDate.toDate().toISOString()
+    : rawDate?._seconds 
+      ? new Date(rawDate._seconds * 1000).toISOString()
+      : typeof rawDate === 'string' ? rawDate : null;
+  
   let role = null;
   let isRegistered = false;
   const cookieStore = await cookies();
@@ -28,13 +37,7 @@ export default async function EventPublicPage({ params }: { params: Promise<{ id
       const decoded = await adminAuth.verifySessionCookie(session, true);
       const userSnap = await adminDb.doc(`users/${decoded.uid}`).get();
       role = userSnap.data()?.role;
-      
-      if (role === 'participant') {
-        const regSnap = await adminDb.collection("participantRegistrations")
-          .where("participantId", "==", decoded.uid)
-          .where("eventId", "==", id).get();
-        isRegistered = !regSnap.empty;
-      } else if (role === 'volunteer') {
+      if (role === 'volunteer') {
         const appSnap = await adminDb.collection("volunteerApplications")
           .where("volunteerId", "==", decoded.uid)
           .where("eventId", "==", id).get();
@@ -65,7 +68,7 @@ export default async function EventPublicPage({ params }: { params: Promise<{ id
             <div className="flex flex-wrap gap-6 border-y border-foreground/[0.05] py-6 mb-12 text-sm font-light text-foreground/70">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-foreground/40" />
-                <span>{new Date(eventData.eventDate).toLocaleDateString()}</span>
+                <span>{eventDateStr ? new Date(eventDateStr).toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) : 'Date TBD'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-foreground/40" />
@@ -105,19 +108,27 @@ export default async function EventPublicPage({ params }: { params: Promise<{ id
                <h3 className="font-serif text-2xl font-medium tracking-tight border-b border-foreground/[0.05] pb-4">Take Action</h3>
                
                <div className="pt-2 flex flex-col gap-4 w-full">
-                 {!role ? (
-                    <Link href="/login" className="w-full">
-                      <Button variant="outline" className="w-full h-12 text-xs uppercase tracking-widest font-bold text-foreground border-foreground/10 hover:bg-foreground/5 shadow-none rounded-[8px]">Sign In to Engage</Button>
-                    </Link>
-                  ) : role === 'participant' ? (
-                    <ParticipantRegisterButton eventId={id} disabled={!eventData.participantRegistrationOpen} isRegistered={isRegistered} />
-                  ) : role === 'volunteer' ? (
-                    <VolunteerApplyButton eventId={id} disabled={!eventData.volunteerRegistrationOpen} isRegistered={isRegistered} />
-                  ) : (
+                 {(role === 'admin' || role === 'event_coordinator') ? (
                     <Link href={`/admin/events/${id}`} className="w-full">
-                      <Button variant="secondary" className="w-full h-12 text-xs uppercase tracking-widest font-bold bg-muted hover:bg-muted/80 text-foreground shadow-none rounded-[8px]">Administration Panel</Button>
+                      <Button variant="secondary" className="w-full h-12 text-xs uppercase tracking-widest font-bold bg-muted hover:bg-muted/80 text-foreground shadow-none rounded-[8px]">Operation Panel</Button>
                     </Link>
-                  )}
+                 ) : role === 'volunteer' ? (
+                    <VolunteerApplyButton eventId={id} disabled={!eventData.volunteerRegistrationOpen} isRegistered={isRegistered} />
+                 ) : (
+                    <>
+                      <PublicRegistrationForm 
+                        eventId={id} 
+                        isFull={eventData.maxParticipants && eventData.participantCount >= eventData.maxParticipants} 
+                        isClosed={!eventData.participantRegistrationOpen} 
+                      />
+                      <div className="mt-4 pt-4 border-t border-foreground/[0.05] text-center">
+                        <p className="text-xs text-foreground/50 mb-3">Want to join our operative team?</p>
+                        <Link href="/login" className="w-full">
+                          <Button variant="outline" className="w-full h-11 text-xs uppercase tracking-widest font-bold text-foreground border-foreground/10 hover:bg-foreground/5 shadow-none rounded-[8px]">Sign In as Volunteer</Button>
+                        </Link>
+                      </div>
+                    </>
+                 )}
                </div>
             </div>
           </aside>

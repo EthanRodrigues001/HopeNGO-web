@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ protocol: 'https', hostname: '**' }],
   },
-  serverExternalPackages: ['@react-pdf/renderer', '@json-render/react-pdf'],
+  serverExternalPackages: ['@react-pdf/renderer', '@json-render/react-pdf', 'firebase-admin'],
   async headers() {
     return [
       {

@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Calendar, Users, FileText, Activity } from "lucide-react";
+import { ArrowUpRight, Calendar, Users, FileText, Activity, Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ events: 0, upcoming: 0, volunteers: 0, participants: 0 });
+  const [stats, setStats] = useState({ events: 0, upcoming: 0, volunteers: 0, coordinators: 0, totalDonations: 0 });
 
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -30,12 +30,13 @@ export default function AdminDashboard() {
       </header>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
         {[
           { label: "Total Events", value: stats.events, icon: Calendar, color: "text-primary" },
           { label: "Upcoming", value: stats.upcoming, icon: Activity, color: "text-primary/70" },
           { label: "Volunteers", value: stats.volunteers, icon: Users, color: "text-primary/80" },
-          { label: "Participants", value: stats.participants, icon: Users, color: "text-primary/60" },
+          { label: "Coordinators", value: stats.coordinators, icon: Users, color: "text-primary/60" },
+          { label: "Donations (₹)", value: `₹${stats.totalDonations.toLocaleString()}`, icon: Heart, color: "text-green-600" },
         ].map((stat) => (
           <Card
             key={stat.label}
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-6 pb-6">
-              <div className="text-4xl font-serif text-foreground mt-1">{stat.value}</div>
+              <div className="text-3xl font-serif text-foreground mt-1">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
@@ -87,6 +88,36 @@ export default function AdminDashboard() {
             </p>
           </div>
           <ArrowUpRight className="text-foreground h-6 w-6 opacity-30 group-hover:opacity-100 group-hover:-translate-y-1 group-hover:translate-x-1 transition-all self-end" />
+        </Link>
+
+        <Link
+          href="/admin/coordinators"
+          className="group rounded-[20px] bg-violet-600/[0.04] p-10 flex flex-col h-[280px] justify-between ring-0 border-0 hover:bg-violet-600/[0.07] transition-all"
+        >
+          <div>
+            <h3 className="font-serif text-3xl font-medium tracking-tight mb-4 text-violet-700">
+              Coordinators
+            </h3>
+            <p className="text-foreground/60 font-light leading-relaxed">
+              Approve event coordinators, view their profiles, and manage field leadership.
+            </p>
+          </div>
+          <ArrowUpRight className="text-violet-600 h-6 w-6 opacity-30 group-hover:opacity-100 group-hover:-translate-y-1 group-hover:translate-x-1 transition-all self-end" />
+        </Link>
+
+        <Link
+          href="/admin/donations"
+          className="group rounded-[20px] bg-green-600/[0.04] p-10 flex flex-col h-[280px] justify-between ring-0 border-0 hover:bg-green-600/[0.07] transition-all"
+        >
+          <div>
+            <h3 className="font-serif text-3xl font-medium tracking-tight mb-4 text-green-700">
+              Donations
+            </h3>
+            <p className="text-foreground/60 font-light leading-relaxed">
+              Review submitted donations, verify transactions, and track total contributions.
+            </p>
+          </div>
+          <ArrowUpRight className="text-green-600 h-6 w-6 opacity-30 group-hover:opacity-100 group-hover:-translate-y-1 group-hover:translate-x-1 transition-all self-end" />
         </Link>
 
         <Link
