@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Calendar as CalendarIcon, MapPin, Users, Ticket, ArrowRight } from "lucide-react";
+import { PlusCircle, Calendar as CalendarIcon, MapPin, Users, ArrowRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -136,18 +136,7 @@ export default async function AdminEventsPage() {
                   </div>
                 </div>
 
-                <div className="pt-6 bg-muted/30 -mx-8 px-8 pb-4 rounded-b-none grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-[10px] text-foreground/40 font-bold uppercase tracking-[0.12em] mb-1 flex items-center gap-1.5">
-                      <Ticket size={12} className="opacity-70" /> Presence
-                    </div>
-                    <div className="text-base text-foreground font-medium">
-                      {event.participantCount || 0}{" "}
-                      <span className="text-sm text-foreground/40 font-light">
-                        / {event.maxParticipants || "∞"}
-                      </span>
-                    </div>
-                  </div>
+                <div className="pt-6 bg-muted/30 -mx-8 px-8 pb-4 rounded-b-none">
                   <div>
                     <div className="text-[10px] text-foreground/40 font-bold uppercase tracking-[0.12em] mb-1 flex items-center gap-1.5">
                       <Users size={12} className="opacity-70" /> Ops

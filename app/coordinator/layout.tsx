@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Calendar, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, Calendar, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 
 const NAV_ITEMS = [
-  { href: "/coordinator/dashboard", label: "My Events", icon: ClipboardList },
+  { href: "/coordinator/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/events", label: "Browse Events", icon: Calendar },
 ];
 
@@ -61,7 +61,7 @@ export default function CoordinatorLayout({ children }: { children: React.ReactN
             const Icon = item.icon;
             return (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={`

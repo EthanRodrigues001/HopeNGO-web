@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, db } from "@/lib/firebase/client";
-import { doc, getDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 import { Button } from "@/components/ui/button";
 
 const DASHBOARD_PREFIXES = ["/admin", "/participant", "/volunteer", "/coordinator"];
@@ -15,38 +14,42 @@ export function Navbar() {
   const [isAuth, setIsAuth] = useState(false);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
-  const router = useRouter();
 
   // Hide navbar on dashboard routes — those have their own navigation
   const isDashboardRoute = DASHBOARD_PREFIXES.some((p) => pathname.startsWith(p));
-  
+
   useEffect(() => {
     if (isDashboardRoute) {
       setLoading(false);
       return;
     }
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setIsAuth(true);
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            setUserRole(userDoc.data().role);
-          } else {
-            setUserRole(null);
-          }
-        } catch (e) {
+
+    // Use session cookie verify endpoint — fast, no Firestore round-trip
+    fetch("/api/auth/verify")
+      .then((res) => {
+        if (!res.ok) {
+          setIsAuth(false);
+          setUserRole(null);
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.role) {
+          setIsAuth(true);
+          setUserRole(data.role);
+        } else {
+          setIsAuth(false);
           setUserRole(null);
         }
-      } else {
+      })
+      .catch(() => {
         setIsAuth(false);
         setUserRole(null);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
+      })
+      .finally(() => setLoading(false));
   }, [isDashboardRoute]);
+
 
   // Don't render on dashboard routes
   if (isDashboardRoute) return null;
@@ -93,13 +96,17 @@ export function Navbar() {
           </Link>
 
           {loading ? null : isAuth ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {userRole && (
                 <Link
                   href={userRole === 'event_coordinator' ? '/coordinator/dashboard' : `/${userRole}/dashboard`}
-                  className="text-[11px] uppercase tracking-[0.12em] font-bold text-primary hover:text-primary/70 transition-colors hidden sm:block"
                 >
-                  Dashboard
+                  <Button
+                    size="sm"
+                    className="h-8 shadow-none bg-primary text-primary-foreground text-[10px] uppercase font-bold tracking-[0.12em] hover:bg-primary/90 rounded-[8px]"
+                  >
+                    Dashboard
+                  </Button>
                 </Link>
               )}
               <Button

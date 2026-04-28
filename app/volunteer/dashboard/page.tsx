@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
-import { Briefcase, Flag, ArrowRight, Loader2, Search } from "lucide-react";
+import { Briefcase, Flag, Award, ArrowRight, Download, Loader2, Search, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -134,33 +134,60 @@ export default function VolunteerDashboard() {
           </section>
 
           {/* Certificates Section */}
-          {certificates.length > 0 && (
-            <section>
-              <div className="mb-8 flex items-center justify-between">
-                <h2 className="text-2xl font-serif text-foreground flex items-center gap-3">
-                  <Flag className="text-primary/70" size={20} strokeWidth={1.5} />
-                  Service Honors
-                </h2>
+          <section>
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="text-2xl font-serif text-foreground flex items-center gap-3">
+                <Award className="text-primary/70" size={20} strokeWidth={1.5} />
+                My Certificates
+              </h2>
+              <div className="flex items-center gap-3">
                 <Badge variant="secondary" className="shadow-none">
                   {certificates.length}
                 </Badge>
+                <Link href="/volunteer/certificates" className="text-[11px] uppercase tracking-[0.10em] font-bold text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
+                  View All <ExternalLink size={11} />
+                </Link>
               </div>
+            </div>
+
+            {certificates.length === 0 ? (
+              <div className="p-10 rounded-[20px] bg-muted/20 flex flex-col items-center justify-center text-center gap-3">
+                <Award className="w-8 h-8 text-primary/20" strokeWidth={1} />
+                <p className="text-sm text-foreground/50 font-light">
+                  No certificates yet. They appear here once admin marks your attendance.
+                </p>
+                <Link href="/volunteer/certificates" className="text-xs text-primary font-semibold hover:underline">
+                  Go to My Certificates →
+                </Link>
+              </div>
+            ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {certificates.map((cert: any) => (
-                  <Card key={cert.id} className="bg-card shadow-[0_32px_64px_-12px_rgba(25,28,26,0.03)] border-0 ring-1 ring-primary/20 rounded-[20px] bg-gradient-to-br from-card to-primary/5 flex flex-col items-center justify-center p-8 text-center text-foreground">
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-primary mb-2">Certificate of Service</p>
-                    <h3 className="text-xl font-serif leading-[1.3] mb-4">{cert.eventTitle}</h3>
-                    <p className="text-sm font-light text-foreground/60 mb-6 font-mono">{cert.certificateNumber}</p>
-                    <a href={cert.qrVerifyUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="text-xs uppercase tracking-widest font-bold shadow-none rounded-[8px] border-primary/20 hover:bg-primary hover:text-primary-foreground transition-colors">
-                        Verify Authenticity
-                      </Button>
-                    </a>
+                {certificates.slice(0, 3).map((cert: any) => (
+                  <Card key={cert.id} className="bg-card shadow-[0_32px_64px_-12px_rgba(25,28,26,0.03)] border-0 ring-1 ring-primary/20 rounded-[20px] bg-gradient-to-br from-card to-primary/5 flex flex-col p-8 text-foreground gap-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-primary mb-2">Certificate of Service</p>
+                      <h3 className="text-lg font-serif leading-[1.3] mb-1">{cert.eventTitle}</h3>
+                      <p className="text-xs font-light text-foreground/50 font-mono">{cert.certificateNumber}</p>
+                    </div>
+                    <div className="flex gap-2 mt-auto">
+                      <a href={`/api/certificates/${cert.id}/download`} download className="flex-1">
+                        <Button className="w-full h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] uppercase tracking-[0.12em] font-bold shadow-none rounded-[8px] gap-1.5">
+                          <Download size={12} /> PDF
+                        </Button>
+                      </a>
+                      {cert.qrVerifyUrl && (
+                        <a href={cert.qrVerifyUrl} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="icon" className="h-9 w-9 shadow-none rounded-[8px] border-primary/20 hover:bg-primary/5 text-foreground/50">
+                            <ExternalLink size={12} />
+                          </Button>
+                        </a>
+                      )}
+                    </div>
                   </Card>
                 ))}
               </div>
-            </section>
-          )}
+            )}
+          </section>
 
           {/* Available Operations Section */}
           <section>

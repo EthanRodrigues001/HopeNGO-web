@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, Calendar, LogOut } from "lucide-react";
+import { LayoutDashboard, Briefcase, Calendar, Award, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
-import { Menu } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/volunteer/dashboard", label: "My Assignments", icon: Briefcase },
-  { href: "/events", label: "Browse Operations", icon: Calendar },
+  { href: "/volunteer/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/volunteer/certificates", label: "My Certificates", icon: Award },
+  { href: "/events", label: "Browse Events", icon: Calendar },
 ];
 
 export default function VolunteerLayout({ children }: { children: React.ReactNode }) {
@@ -62,7 +62,7 @@ export default function VolunteerLayout({ children }: { children: React.ReactNod
             const Icon = item.icon;
             return (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={`
