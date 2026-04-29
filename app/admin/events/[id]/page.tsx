@@ -525,11 +525,17 @@ export default async function AdminEventDetailsPage({
                     <p className="text-xs text-foreground/50 font-light">Event summary · Attendance · Participants · Donations</p>
                   </div>
                 </div>
-                <Link href={`/api/events/${id}/report`} target="_blank">
-                  <Button variant="outline" className="h-9 border-foreground/10 hover:bg-muted text-foreground text-xs uppercase tracking-widest font-bold shadow-none rounded-lg gap-1.5">
+                {coordinatorReports.length > 0 ? (
+                  <Link href={`/api/events/${id}/report`} target="_blank">
+                    <Button variant="outline" className="h-9 border-foreground/10 hover:bg-muted text-foreground text-xs uppercase tracking-widest font-bold shadow-none rounded-lg gap-1.5">
+                      <Download size={13} /> Download PDF
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button disabled variant="outline" className="h-9 border-foreground/10 text-foreground text-xs uppercase tracking-widest font-bold shadow-none rounded-lg gap-1.5 opacity-50 cursor-not-allowed">
                     <Download size={13} /> Download PDF
                   </Button>
-                </Link>
+                )}
               </div>
 
               {/* Coordinator image submissions */}
