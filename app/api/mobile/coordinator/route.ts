@@ -79,9 +79,31 @@ export async function GET(req: Request) {
       volunteers.push(...volSnap.docs.map((d) => sanitize(d.data(), d.id)));
     }
 
+    // Fetch this coordinator's submitted reports
+    const reportsSnap = await adminDb
+      .collection('coordinatorReports')
+      .where('coordinatorId', '==', uid)
+      .get();
+
+    const reportsByEventId: Record<string, { imageUrls: string[]; notes: string }> = {};
+    reportsSnap.docs.forEach((d) => {
+      const data = d.data();
+      reportsByEventId[data.eventId] = {
+        imageUrls: data.imageUrls || [],
+        notes: data.notes || '',
+      };
+    });
+
+    // Merge report data into each event
+    const eventsWithReports = events.map((ev: any) => ({
+      ...ev,
+      reportImageUrls: reportsByEventId[ev.id]?.imageUrls ?? [],
+      reportNotes: reportsByEventId[ev.id]?.notes ?? '',
+    }));
+
     const body = JSON.stringify({
       user: sanitize({ id: uid, ...userData }),
-      events,
+      events: eventsWithReports,
       sessions,
       volunteers,
     });
